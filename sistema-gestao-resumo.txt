@@ -1,0 +1,679 @@
+# SISTEMA DE GESTÃO MUNICIPAL - DOCUMENTO COMPLETO
+
+## Finalidade
+O sistema serve para gerenciamento de frotas municipais e empresariais, com foco especial em controle de combustível e veículos. É uma solução multi-tenant que permite que várias prefeituras ou empresas utilizem a mesma plataforma com isolamento de dados. O sistema visa otimizar recursos, reduzir custos operacionais e garantir conformidade com normas regulatórias do setor público e de combustíveis.
+
+## IMPORTANTE: Preservação do Design Atual
+**O design atual do sistema NÃO DEVE ser modificado sob nenhuma circunstância.** A interface de usuário atual foi meticulosamente desenvolvida seguindo padrões de UX/UI específicos para as necessidades dos usuários finais, e qualquer alteração pode comprometer:
+
+- A familiaridade dos usuários com o sistema
+- Os fluxos de trabalho já estabelecidos
+- A identidade visual da aplicação
+- A consistência entre os diferentes módulos
+- A acessibilidade e usabilidade já testadas
+
+Todas as melhorias, correções e novas funcionalidades devem respeitar rigorosamente o design system atual, mantendo os mesmos:
+- Componentes visuais (shadcn/ui)
+- Esquema de cores
+- Tipografia
+- Layout geral
+- Padrões de interação
+- Estrutura de navegação
+
+Os desenvolvedores devem consultar a documentação existente do design system antes de implementar qualquer mudança funcional para garantir conformidade visual e comportamental.
+
+## Análise Detalhada do Design Atual
+
+### Layout e Estrutura Visual
+- **Menu Lateral**: Posicionado à esquerda, com navegação hierárquica por módulos
+  - Ícones intuitivos para cada seção principal
+  - Submenus expansíveis para cada módulo (ex: Combustível > Abastecimento, Cadastros, etc.)
+  - Destaque visual para o item selecionado
+  - Cor de fundo em tom azul claro que contrasta adequadamente com o conteúdo principal
+  - Logo e nome do sistema no topo do menu
+
+- **Cabeçalho Superior**: Minimalista e funcional
+  - Data e hora atuais claramente visíveis (ex: 15/05/2025 - 19:21)
+  - Indicador do usuário logado com nível de acesso (ex: Administrador)
+  - Ícones de ação contextual quando necessário
+
+- **Área de Conteúdo Principal**: Ampla e bem organizada
+  - Título da seção atual em destaque (ex: "Painel de Controle")
+  - Navegação por abas para acesso rápido aos módulos principais
+  - Cards informativos para métricas importantes
+  - Elementos visuais bem espaçados para fácil leitura
+
+### Componentes e Elementos Visuais
+- **Cards de Métricas**: Design moderno com bordas suaves
+  - Título descritivo (ex: "Total de Abastecimentos")
+  - Valor em destaque
+  - Indicador de comparação com período anterior
+  - Ícone relevante para cada métrica
+  - Espaçamento adequado entre cards
+
+- **Seletor de Período**: Interface intuitiva para navegação temporal
+  - Controles de navegação (anterior/próximo)
+  - Mês e ano em destaque (ex: "Maio De 2025")
+  - Botão para alteração manual da data de ciclo
+
+- **Gráficos e Visualizações**: 
+  - Escala apropriada para visualização de dados
+  - Legendas claras para identificação de séries
+  - Cores distintas para diferentes tipos de dados
+  - Grid auxiliar para referência visual
+  - Marcadores temporais (meses) claramente identificados
+  - Opções de filtro através de checkboxes interativas
+
+### Esquema de Cores e Tipografia
+- **Paleta de Cores Principal**:
+  - Azul (#2563EB) para elementos principais e identidade visual
+  - Verde (#10B981) para indicadores de consumo
+  - Laranja (#F97316) para valores monetários
+  - Cinza claro (#F1F5F9) para fundos e áreas de conteúdo
+  - Branco (#FFFFFF) para cards e elementos de destaque
+  - Preto/cinza escuro (#0F172A) para textos e títulos
+
+- **Hierarquia Tipográfica**:
+  - Títulos em fonte sem serifa, negrito, tamanho apropriado para hierarquia
+  - Textos de conteúdo em fonte legível otimizada para telas
+  - Valores numéricos em estilo que facilita leitura rápida
+  - Consistência de alinhamento (esquerda para textos, direita para valores)
+
+### Interações e Feedback Visual
+- **Estados dos Elementos**:
+  - Hover: Sutis alterações de opacidade ou cor
+  - Selecionado: Destaque claro para o item atual
+  - Desabilitado: Redução de opacidade para indicar indisponibilidade
+
+- **Feedback de Ações**:
+  - Transições suaves entre estados
+  - Animações sutis para carregamento de dados
+  - Confirmações visuais para ações completadas
+
+### Navegação e Arquitetura de Informação
+- **Estrutura Hierárquica**:
+  - Nível 1: Módulos principais (Combustível, Veículos, Funcionários, LOG Sistema)
+  - Nível 2: Submódulos funcionais (Abastecimento, Cadastros, etc.)
+  - Nível 3: Ações específicas dentro de cada submódulo
+
+- **Breadcrumbs Visuais**:
+  - Sempre visível o caminho completo de navegação
+  - Fácil retorno a níveis anteriores
+  - Consistência entre menu lateral e conteúdo exibido
+
+### Responsividade e Adaptabilidade
+- **Comportamento em Diferentes Telas**:
+  - Layout adaptável mantendo a usabilidade
+  - Menu lateral colapsável em telas menores
+  - Reordenamento de cards em layouts mais estreitos
+  - Gráficos responsivos que mantêm legibilidade
+
+### Acessibilidade Implementada
+- **Características de Acessibilidade**:
+  - Contraste adequado entre texto e fundo
+  - Tamanhos de fonte ajustáveis
+  - Estrutura semântica para leitores de tela
+  - Foco visual claro para navegação por teclado
+
+Esta análise detalhada do design atual deve ser utilizada como referência para qualquer desenvolvimento futuro, garantindo que a experiência do usuário permaneça consistente e que a identidade visual do sistema seja preservada integralmente.
+
+## Resumo da Conversa Inicial
+A conversa envolveu a análise e preparação de um sistema de gestão municipal desenvolvido com Next.js, TypeScript e React, com foco em gestão de frota e combustível. 
+
+**Requisitos e Escopo do Sistema:**
+- Sistema para gestão de frotas municipais/empresariais
+- Módulos: Combustível, Veículos, Funcionários, LOG Sistema
+- Funcionalidades: controle de abastecimento, cadastro de veículos, gestão de funcionários, relatórios
+- Conformidade com normas ANP (Agência Nacional do Petróleo)
+- Multi-tenant (vários clientes usando o mesmo sistema)
+- Inicialmente 2 empresas com 8 usuários cada
+- Gestão completa do ciclo de vida dos veículos, desde aquisição até descarte
+- Rastreabilidade total de todas as operações para fins de auditoria
+
+**Análise Técnica:**
+- Stack atual: Next.js, TypeScript, Tailwind CSS, shadcn/ui
+- Armazenamento em LocalStorage (temporário)
+- Autenticação básica implementada
+- Futura migração para Supabase recomendada
+- Arquitetura de front-end baseada em componentes isolados
+- Padrão de gerenciamento de estado usando Context API
+- Sistema de roteamento baseado no App Router do Next.js 13+
+- Convenções de nomenclatura claras e consistentes
+- Tipagem estrita com TypeScript para prevenir erros em tempo de desenvolvimento
+
+**Ações Realizadas:**
+1. Backup do projeto original em pasta separada
+2. Limpeza do cache do Next.js
+3. Reinstalação de dependências
+4. Remoção de dados de exemplo para testes limpos
+5. Correção de tipagens TypeScript
+6. Verificação da consistência do design system
+7. Validação da estrutura de diretórios
+8. Documentação do estado atual do sistema
+
+**Preparação para Testes:**
+- Manutenção de estruturas essenciais: usuário admin, tipos de combustível
+- Remoção de dados fictícios: veículos, funcionários, abastecimentos
+- Correção de erros de tipagem nos componentes
+- Validação de formulários para garantir integridade dos dados
+- Testes unitários básicos para funções críticas
+- Plano de testes de integração para ciclos completos de operação
+- Ambiente de teste isolado para evitar contaminação de dados
+
+**Próximos Passos:**
+- Testar todas as funcionalidades no ambiente local
+- Identificar possíveis problemas
+- Implementar persistência de dados mais robusta
+- Planejar migração para servidor na nuvem (Supabase)
+- Desenvolvimento de testes automatizados
+- Implementação de CI/CD para garantir qualidade de código
+- Documentação detalhada para usuários finais e desenvolvedores
+
+**Aspectos Críticos:**
+- Backup em tempo real é essencial para o cliente
+- Sistema multi-prefeituras com isolamento de dados
+- Controle de permissões (ADM e usuários regulares)
+- Relatórios e conformidade com agências reguladoras
+- Confidencialidade absoluta de dados sensíveis
+- Disponibilidade 24/7 com tempo de inatividade mínimo
+- Performance mesmo com grandes volumes de dados
+- Escalabilidade para atender crescimento futuro do cliente
+
+## Módulos Principais
+
+### Combustível
+- Controle de abastecimentos e consumo
+- Gestão de diferentes tipos de combustíveis e seus preços
+- Cálculo automático de média de consumo
+- Controle de quilometragem por abastecimento
+- Monitoramento de variações de preço
+- Alertas para consumo anormal (possíveis vazamentos ou fraudes)
+- Relatórios detalhados por período, departamento e veículo
+- Histórico completo de abastecimentos por veículo
+- Validação cruzada entre quilometragem e consumo
+- Interface para impressão de comprovantes
+- Integração prevista com bombas de combustível digitais
+
+### Veículos
+- Cadastro e gestão da frota
+- Controle de manutenções preventivas e corretivas
+- Agenda de revisões obrigatórias
+- Controle de documentação e vencimentos (IPVA, licenciamento, seguros)
+- Histórico de uso por departamento e motorista
+- Gestão de pneus e peças de reposição
+- Controle de quilometragem
+- Alertas automáticos para manutenções baseados em tempo ou quilometragem
+- Registro fotográfico da situação do veículo
+- Acompanhamento de depreciação para fins contábeis
+- Sistema de reserva de veículos para uso departamental
+
+### Funcionários
+- Gerenciamento dos usuários do sistema
+- Controle de CNH e suas categorias
+- Registro de infrações e ocorrências
+- Histórico de utilização de veículos
+- Avaliação de condução econômica
+- Controle de treinamentos e certificações
+- Gestão de escalas e disponibilidade
+- Sistema de avaliação de desempenho específico para motoristas
+- Controle de horas trabalhadas e descanso (conformidade com legislação trabalhista)
+- Registro de autorizações especiais (transporte de cargas perigosas, etc.)
+- Alertas de vencimento de documentos pessoais necessários para função
+
+### LOG Sistema
+- Registro de atividades para auditoria
+- Rastreamento de alterações em registros críticos
+- Histórico completo de operações por usuário
+- Logs de tentativas de acesso indevido
+- Alertas para comportamentos anômalos
+- Relatórios de utilização do sistema
+- Registros de performance e tempos de resposta
+- Backup automático de dados críticos
+- Armazenamento seguro com criptografia
+- Conformidade com requisitos de retenção de dados para órgãos públicos
+- Interface administrativa para consultas avançadas aos logs
+
+## Funcionalidades Detalhadas
+- Controle completo de abastecimentos com validação de quilometragem
+- Cadastro detalhado de veículos com documentação digital anexada
+- Gestão de funcionários e permissões com níveis granulares de acesso
+- Geração de relatórios conforme exigências legais e padrões contábeis
+- Conformidade com normas da ANP (Agência Nacional do Petróleo)
+- Dashboard personalizado por perfil de usuário
+- Exportação de dados em múltiplos formatos (PDF, Excel, CSV)
+- Sistema de notificações internas e por e-mail
+- Agenda integrada para manutenções e renovações de documentos
+- Importação de dados de sistemas legados
+- Validação de campos críticos com dupla verificação
+- Suporte a múltiplos dispositivos e navegadores modernos
+- Operação offline com sincronização posterior
+- Interface administrativa para configurações do sistema
+- Geolocalização de veículos e abastecimentos (implementação futura)
+
+## Especificações Técnicas
+- Desenvolvido com Next.js, TypeScript e React
+- Interface visual com Tailwind CSS e shadcn/ui
+- Armazenamento atual em LocalStorage (temporário)
+- Planejada migração para Supabase como solução definitiva
+- Sistema de autenticação implementado
+- Arquitetura de API RESTful
+- Design responsivo para todos os tamanhos de tela
+- Otimização de performance com lazy loading e code splitting
+- Estado global gerenciado com Context API e hooks customizados
+- Validação de formulários com Zod e React Hook Form
+- Testes automatizados com Jest e React Testing Library
+- Sistema de build otimizado para produção
+- Separação clara entre lógica de negócios e apresentação
+- Padrões de código consistentes em todo o projeto
+- Documentação técnica inline e externa
+- Sistema de tratamento de erros centralizado
+- Cache inteligente para otimizar requisições à API
+- Estratégia de deployment com zero downtime
+
+## Regras de Negócio
+- Isolamento de dados entre diferentes clientes (multi-tenant)
+- Controle de acesso com níveis de permissão (Administradores e Usuários)
+- Backup em tempo real dos dados (requisito crítico)
+- Conformidade com regulamentações específicas do setor
+- Obrigatoriedade de registro de quilometragem em cada abastecimento
+- Validação de limites de abastecimento por veículo
+- Restrições de quais funcionários podem operar determinados veículos
+- Workflow de aprovação para manutenções acima de valor predefinido
+- Período mínimo entre abastecimentos para evitar fraudes
+- Regras para cálculo de depreciação de frota
+- Alertas automáticos para consumo acima da média
+- Regras específicas para veículos leves, pesados e máquinas especiais
+- Validação de compatibilidade entre CNH do motorista e categoria do veículo
+- Restrições de horário para determinadas operações
+- Regras específicas para veículos oficiais e de representação
+- Cálculo de custos operacionais por departamento e centro de custo
+- Validação de distância percorrida versus combustível consumido
+
+## Escala Inicial
+- 2 empresas utilizando o sistema
+- 8 usuários por empresa
+- Aproximadamente 50-100 veículos no total
+- Volume estimado de 200-300 abastecimentos mensais
+- 10-20 relatórios mensais gerados para cada cliente
+- Armazenamento inicial estimado em 5GB por cliente
+- Tráfego diário estimado de 100-200 operações por usuário
+- Pico de uso em horário comercial (8h-18h)
+- Crescimento projetado de 50% no primeiro ano
+- Adição de novos clientes a uma taxa de 1 por trimestre
+- Necessidade de escalabilidade horizontal para suportar crescimento
+
+## Estado Atual
+O sistema está em fase de preparação para testes, com estrutura básica implementada e dados de exemplo removidos. Todas as funcionalidades essenciais estão desenvolvidas, mas ainda utilizando armazenamento local. O design atual está completamente implementado e deve ser rigorosamente mantido em todos os desenvolvimentos futuros. A arquitetura atual suporta os requisitos funcionais imediatos e está preparada para a migração para uma solução de persistência mais robusta.
+
+## Detalhes Adicionais por Módulo
+
+### Módulo de Combustível
+- Registro detalhado de cada abastecimento (data, hora, quantidade, valor)
+- Cálculo automático de consumo médio por veículo
+- Controle de tipos de combustível (gasolina, diesel, etanol)
+- Alertas para consumo anormal ou possíveis fraudes
+- Relatórios de gastos por período, veículo e departamento
+- Comparativo de preços entre diferentes postos de combustível
+- Registro de fornecedores e contratos de fornecimento
+- Histórico de preços para análise de variações
+- Relatórios de economia por adoção de práticas específicas
+- Cálculo de impacto ambiental baseado no consumo
+- Validação de quilometragem por GPS (implementação futura)
+- Sistema de limites de abastecimento personalizados por veículo
+- Controle de aditivos e lubrificantes
+- Alertas para preços fora da média de mercado
+- Registro detalhado de notas fiscais com anexos digitais
+- Cálculo de autonomia restante baseado no nível atual do tanque
+
+### Módulo de Veículos
+- Ficha técnica completa de cada veículo (marca, modelo, ano, placa)
+- Histórico de manutenções preventivas e corretivas
+- Controle de quilometragem e hodômetro
+- Documentação digital (licenciamento, IPVA, seguros)
+- Status operacional (ativo, em manutenção, desativado)
+- Vínculo com departamentos específicos
+- Registro fotográfico completo (interior, exterior, motor)
+- Controle de garantias de fábrica e estendidas
+- Agenda de revisões obrigatórias com alertas
+- Histórico de acidentes e sinistros
+- Registro de modificações e adaptações
+- Controle de pneus (rodízio, troca, calibragem)
+- Sistema de reserva para uso departamental
+- Integração com rastreadores GPS (futura implementação)
+- Cálculo de depreciação para fins contábeis
+- Histórico de avaliações e laudos técnicos
+- Controle de multas e infrações vinculadas ao veículo
+- Histórico de transferências entre departamentos
+- Registro de consumo de componentes (filtros, pastilhas, etc.)
+- Alertas para recall de fábrica
+
+### Módulo de Funcionários
+- Cadastro completo com dados pessoais e profissionais
+- Controle de CNH e categorias habilitadas
+- Registro de treinamentos e certificações
+- Sistema de permissões granular por funcionalidade
+- Histórico de utilização dos veículos por motorista
+- Registro de infrações de trânsito cometidas
+- Sistema de pontuação por condução econômica
+- Controle de horas trabalhadas (especialmente para motoristas profissionais)
+- Agenda de compromissos e viagens planejadas
+- Histórico médico relevante (exames toxicológicos, etc.)
+- Controle de EPI's fornecidos
+- Registro de cursos de direção defensiva e especializações
+- Histórico de ocorrências e acidentes
+- Avaliações periódicas de desempenho
+- Controle de custos por motorista (combustível, manutenções por uso indevido)
+- Sistema de alertas para renovação de documentos
+- Registro de autorizações especiais (materiais perigosos, etc.)
+- Controle de diárias e reembolsos
+- Dashboard personalizado por perfil de motorista
+
+### Módulo de LOG Sistema
+- Registro detalhado de todas as operações (data, hora, usuário)
+- Trilha de auditoria completa para conformidade legal
+- Histórico de alterações em registros críticos
+- Alertas para operações suspeitas ou fora do padrão
+- Monitoramento de tentativas de acesso não autorizado
+- Registro de exportações de dados realizadas
+- Log de erros do sistema para análise técnica
+- Métricas de performance e utilização
+- Registro de backups realizados e restaurações
+- Histórico de atualizações do sistema
+- Monitoramento de falhas em tempo real
+- Trilha de auditoria específica para alterações em configurações sensíveis
+- Registro de sessões ativas e encerradas
+- Logs de consultas complexas para otimização
+- Alertas para operações em sequência potencialmente fraudulentas
+- Registro detalhado de todas as comunicações com sistemas externos
+
+### Aspectos Técnicos Adicionais
+- Arquitetura baseada em componentes React reutilizáveis
+- Sistema de rotas dinâmicas com Next.js App Router
+- Validação de formulários com React Hook Form
+- Interface responsiva para uso em dispositivos móveis
+- Design system consistente com componentes shadcn/ui
+- Tipagem estrita com TypeScript para segurança de dados
+- Sistema de cache inteligente para operações frequentes
+- Autenticação com tokens JWT e refresh tokens
+- Lazy loading para otimização de performance
+- Estratégia de tratamento de erros centralizada
+- Sistema de logs técnicos separados dos logs de negócio
+- Otimização de imagens e assets estáticos
+- Separação clara entre camadas de UI, lógica de negócios e acesso a dados
+- Sistema de temas light/dark respeitando preferências do usuário
+- Acessibilidade WCAG 2.1 nível AA
+- Internacionalização preparada para múltiplos idiomas (futura implementação)
+- Sistema de feedback de usuário integrado
+- Middleware para processamento de requisições sensíveis
+- Estratégia de retry para operações falhas em rede instável
+- Validação de dados em múltiplas camadas (cliente e servidor)
+
+### Regras de Negócio Específicas
+- Isolamento completo de dados entre prefeituras/empresas
+- Controle rigoroso de permissões baseado em papéis (RBAC)
+- Workflow de aprovação para abastecimentos acima de limites predefinidos
+- Relatórios obrigatórios para prestação de contas a órgãos fiscalizadores
+- Integração futura com sistemas de GPS para validação geográfica
+- Limite de quilometragem entre abastecimentos baseado em capacidade do tanque
+- Restrições de horário para determinadas operações
+- Validação cruzada entre abastecimento e uso do veículo
+- Regras específicas para veículos especiais (ambulâncias, máquinas pesadas)
+- Cálculos automatizados de depreciação seguindo normas contábeis
+- Sistema de aprovação em múltiplos níveis para operações críticas
+- Regras para substituição de frota baseadas em idade e quilometragem
+- Controles específicos para veículos locados vs. próprios
+- Validação de compatibilidade entre motorista e veículo
+- Regras de rodízio de manutenção preventiva
+- Controle de custos baseado em centros de custo
+- Relatórios específicos para TCE e órgãos fiscalizadores
+- Regras de utilização de veículos fora do horário comercial
+- Sistema de alertas progressivos para aproximação de limites
+- Bloqueio automático de operações para veículos com documentação vencida
+
+### Plano de Implementação
+- Fase 1: Desenvolvimento local com dados em LocalStorage (atual)
+- Fase 2: Migração para Supabase com persistência em banco PostgreSQL
+- Fase 3: Implementação de backup redundante e recuperação de desastres
+- Fase 4: Expansão do sistema com módulos adicionais solicitados pelos clientes
+- Fase 5: Integração com sistemas externos (GPS, bombas digitais)
+- Fase 6: Implementação de aplicativo móvel para motoristas
+- Fase 7: Sistema avançado de Business Intelligence para análise detalhada
+- Fase 8: Expansão para novos clientes com infraestrutura escalável
+- Fase 9: Implementação de recursos de IA para manutenção preditiva
+- Fase 10: Consolidação como plataforma SaaS para o mercado público
+
+### Requisitos Críticos
+- Tempo de resposta inferior a 2 segundos para operações comuns
+- Disponibilidade de 99,9% em ambiente de produção
+- Segurança de dados conforme LGPD e outras regulamentações
+- Interface intuitiva com curva de aprendizado mínima para novos usuários
+- Redundância completa para evitar perda de dados
+- Validação rigorosa para evitar inconsistências
+- Capacidade de operação em conexões de internet instáveis
+- Rastreabilidade completa de todas as operações
+- Capacidade de auditoria retrospectiva
+- Recuperação rápida em caso de falhas
+- Isolamento completo entre dados de diferentes clientes
+- Controle de versão para todas as alterações em registros críticos
+- Capacidade de operar em hardwares modestos nas prefeituras pequenas
+- Conformidade com todas as regulamentações aplicáveis ao setor público
+- Suporte a picos de uso (fechamento de mês, prestação de contas)
+
+## Detalhes Finais e Avançados
+
+### Segurança e Proteção de Dados
+- Autenticação baseada em tokens JWT com expiração configurável
+- Criptografia de dados sensíveis em repouso e em trânsito
+- Política de senhas fortes com renovação periódica
+- Registro de tentativas de acesso mal-sucedidas
+- Bloqueio automático após múltiplas tentativas incorretas
+- Conformidade com LGPD para tratamento de dados pessoais
+- Sistema de detecção de intrusão
+- Análise de vulnerabilidades periódica
+- Separação de ambientes (desenvolvimento, teste, produção)
+- Rotação de chaves de criptografia
+- Auditoria externa de segurança
+- Proteção contra ataques comuns (XSS, CSRF, SQL Injection)
+- Mecanismos anti-automação para prevenir scraping
+- Registros de auditoria à prova de adulteração
+- Implementação de princípio de privilégio mínimo
+- Controle de acesso baseado em contexto
+- Sanitização de todas as entradas de usuário
+- Monitoramento de atividades suspeitas em tempo real
+- Plano de resposta a incidentes documentado
+- Treinamento de segurança para administradores
+
+### Fluxos Operacionais
+- **Processo de Abastecimento**: Solicitação → Aprovação → Liberação → Registro → Auditoria
+- **Manutenção de Veículos**: Alerta → Agendamento → Execução → Registro → Validação
+- **Gestão de Incidentes**: Ocorrência → Documentação → Análise → Resolução → Relatório
+- **Onboarding de Novo Cliente**: Contrato → Configuração → Migração → Treinamento → Acompanhamento
+- **Adição de Veículo**: Registro → Documentação → Configuração → Ativação → Vinculação
+- **Processo de Baixa de Veículo**: Solicitação → Aprovação → Documentação → Baixa → Arquivamento
+- **Gestão de Multas**: Recebimento → Identificação → Recurso → Pagamento → Registro
+- **Renovação de Documentos**: Alerta → Agendamento → Execução → Atualização → Validação
+- **Relatórios Periódicos**: Programação → Geração → Validação → Distribuição → Arquivamento
+- **Gestão de Usuários**: Solicitação → Aprovação → Criação → Treinamento → Acompanhamento
+- **Auditoria Interna**: Planejamento → Execução → Relatório → Ajustes → Verificação
+- **Atualização do Sistema**: Planejamento → Teste → Comunicação → Implementação → Validação
+
+### Integrações Planejadas
+- APIs para integração com sistemas contábeis municipais
+- Conexão com bombas de combustível digitais para registro automático
+- Integração com sistemas de rastreamento veicular
+- Exportação de dados para plataformas de BI e análise avançada
+- Comunicação com sistemas de gestão de patrimônio municipal
+- Integração com DETRAN para consulta de documentos
+- Sistemas de gestão orçamentária municipal
+- Portais de transparência governamental
+- Sistemas de rastreamento e telemetria avançada
+- Plataformas de manutenção especializada
+- Aplicativos móveis para motoristas
+- Sistemas meteorológicos para planejamento de rotas
+- Plataformas de leilão para alienação de veículos
+- Sistemas de folha de pagamento para motoristas
+- Plataformas de e-learning para treinamentos
+- Sistemas de controle de portaria e acesso
+
+### Estratégia de Backup e Recuperação
+- Backups incrementais a cada 30 minutos
+- Backup completo diário com retenção de 90 dias
+- Armazenamento redundante em múltiplas zonas geográficas
+- Simulações periódicas de recuperação de desastres
+- Tempo máximo de recuperação: 4 horas para retorno completo
+- Testes automatizados de restauração
+- Verificação de integridade após cada backup
+- Sistemas de alerta para falhas no processo de backup
+- Política de privilégio mínimo para acesso aos backups
+- Criptografia de dados em backups externos
+- Documentação detalhada de procedimentos de recuperação
+- Backups específicos antes de atualizações críticas
+- Retenção estendida para dados históricos importantes
+- Classificação de dados por criticidade para priorização
+- Redundância N+1 para sistemas críticos
+- Plano de continuidade de negócios documentado
+
+### Métricas e Indicadores
+- Consumo médio de combustível por categoria de veículo
+- Custo por quilômetro rodado por departamento
+- Taxa de disponibilidade da frota operacional
+- Tempo médio entre falhas por modelo de veículo
+- Eficiência de gasto com combustível por período e departamento
+- ROI de manutenções preventivas vs. corretivas
+- Tempo médio de vida útil por categoria de veículo
+- Índice de conformidade documental da frota
+- Taxa de incidentes por motorista/veículo
+- Custo total de propriedade (TCO) por veículo
+- Índice de ociosidade da frota
+- Taxa de aproveitamento em rotas otimizadas
+- Desvio padrão no consumo por modelo
+- Índice de satisfação dos usuários do sistema
+- Taxa de resolução de problemas no primeiro atendimento
+- Tempo médio de resposta a incidentes críticos
+- Economia gerada por práticas sustentáveis
+- Custo evitado por manutenções preventivas
+- Índice de renovação da frota
+- Benchmark de custo operacional contra mercado
+
+### Requisitos Regulatórios
+- Conformidade com Portaria ANP nº 116 (revenda de combustíveis)
+- Atendimento às exigências do TCE para prestação de contas municipais
+- Relatórios específicos para Lei de Responsabilidade Fiscal
+- Documentação digital conforme normas do DENATRAN
+- Registro de emissões para conformidade ambiental
+- Adequação à Lei Geral de Proteção de Dados (LGPD)
+- Conformidade com instruções normativas do Ministério da Economia
+- Atendimento aos requisitos de transparência da Lei de Acesso à Informação
+- Registro digital de documentos conforme legislação arquivística
+- Controles específicos para licitações e contratos (Lei 8.666)
+- Requisitos específicos de Tribunais de Contas Estaduais
+- Normas de segurança para transporte de materiais específicos
+- Exigências da Lei de Mobilidade Urbana (quando aplicável)
+- Requisitos ambientais municipais e estaduais
+- Normas técnicas ABNT para gestão de frotas
+- Requisitos de prestação de contas para recursos vinculados
+
+### Suporte e Manutenção
+- Suporte técnico 24/7 para problemas críticos
+- Atualizações periódicas programadas com mínimo impacto operacional
+- Base de conhecimento integrada para usuários finais
+- Sistema de tickets para acompanhamento de solicitações
+- Treinamento contínuo para novos recursos implementados
+- Análise proativa de tendências de problemas
+- Gestão de problemas conhecidos e soluções de contorno
+- Programa de melhoria contínua baseado em feedback
+- Monitoramento em tempo real de saúde do sistema
+- SLAs documentados por nível de criticidade
+- Equipe dedicada para grandes clientes
+- Portal de suporte com recursos de autoatendimento
+- Webinars periódicos sobre novos recursos
+- Processo formal de gestão de mudanças
+- Procedimentos documentados para escalação de problemas
+- Comunicação proativa sobre manutenções planejadas
+- Pesquisas de satisfação após atendimentos
+- Rotação de conhecimento na equipe de suporte
+- Documentação técnica constantemente atualizada
+- Ambiente de homologação para testes avançados
+
+### Infraestrutura Recomendada
+- Servidor cloud com escalonamento automático
+- Balanceamento de carga para alta disponibilidade
+- CDN para distribuição eficiente de conteúdo estático
+- Banco de dados PostgreSQL com otimização para consultas complexas
+- Monitoramento contínuo de performance e disponibilidade
+- Firewall avançado com proteção contra DDoS
+- Rede privada virtual para comunicações sensíveis
+- Cluster de banco de dados com replicação
+- Sistemas de cache distribuído
+- Serviços de armazenamento em blocos para anexos e documentos
+- Serviços gerenciados de identidade e acesso
+- Infraestrutura como código para replicação de ambientes
+- Contêineres para isolamento de aplicações
+- Pipeline de CI/CD automatizado
+- Sistemas de log centralizados com retenção configurável
+- Ambiente de DR em região geográfica distinta
+- Testes de carga programados
+- Monitoramento de segurança 24/7
+- Serviços de backup gerenciados com verificação
+- Edge computing para otimização de latência (implementação futura)
+
+### Expansões Futuras Planejadas
+- Módulo de gestão de pneus e peças de reposição
+- Integração com sistema de multas e infrações
+- Aplicativo móvel para motoristas com check-list digital
+- Dashboard avançado com análise preditiva de manutenção
+- Sistema de gamificação para incentivo à condução econômica
+- Módulo de roteirização inteligente com otimização de rotas
+- Sistema avançado de BI com visualizações personalizáveis
+- Módulo de gestão de contratos de seguros e serviços
+- Integração com sistema de compras e licitações
+- Funcionalidades de frotas compartilhadas (car sharing interno)
+- Suporte a veículos elétricos e híbridos
+- Sistema de reserva de veículos com aprovação automática
+- Integração com sensores IoT para monitoramento avançado
+- Análises preditivas para manutenção baseada em condição
+- Módulo avançado de gestão de ativos fixos
+- Suporte a veículos autônomos (preparação futura)
+- Relatórios ambientais e de sustentabilidade
+- Integração com sistemas de pedágio automático
+- Expansão para gestão de equipamentos além de veículos
+- Plataforma completa de mobilidade corporativa
+
+### Implantação e Onboarding
+- Migração de dados legados com validação automática
+- Período de operação paralela para garantia de continuidade
+- Treinamento inicial com carga horária mínima de 16 horas
+- Acompanhamento dedicado nas primeiras 2 semanas de operação
+- Revisão de processos após 30 dias para ajustes finos
+- Customização de relatórios específicos por cliente
+- Configuração de alertas e gatilhos personalizados
+- Integração com sistemas existentes do cliente
+- Documentação personalizada com processos específicos
+- Treinamento de multiplicadores internos
+- Workshops de melhores práticas para gestores
+- Validação de segurança e conformidade específica
+- Configuração de hierarquia organizacional no sistema
+- Importação de catálogos específicos de veículos
+- Configuração de dashboards personalizados por função
+- Suporte presencial durante lançamento
+- Avaliações periódicas de adoção e uso
+- Plano de comunicação para usuários finais
+- Sessões de feedback estruturadas
+- Programa de adoção progressiva de funcionalidades
+
+### Requisitos Não-Funcionais Adicionais
+- Tempo máximo de carregamento inicial: 3 segundos
+- Tamanho máximo do bundle JavaScript: 500KB (comprimido)
+- Suporte a navegadores: últimas 2 versões de Chrome, Firefox, Safari, Edge
+- Consumo máximo de memória em dispositivos móveis: 300MB
+- Requisitos mínimos de hardware para clientes: 4GB RAM, processador dual-core
+- Performance de consultas complexas: <5 segundos
+- Armazenamento de anexos: suporte a arquivos de até 20MB
+- Capacidade de processamento em lote: 1000 registros por minuto
+- Capacidade de expansão: 10x o volume inicial sem degradação
+- Internacionalização: suporte a português, inglês e espanhol
+- Acessibilidade: conformidade com WCAG 2.1 nível AA
+- Compatibilidade de impressão: relatórios otimizados para impressão
+- Ciclo de vida do produto: suporte mínimo de 5 anos
+- Compatibilidade com leitores de tela e tecnologias assistivas
+- Operação offline com sincronização quando a conexão for restaurada 

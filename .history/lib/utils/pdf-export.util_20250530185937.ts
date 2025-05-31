@@ -595,17 +595,10 @@ export class PDFExportUtil {
 
         // Gerar cada via
         vias.forEach((via, index) => {
-          // Verificar se há espaço suficiente na página (aproximadamente 100mm por via)
-          const spaceNeeded = 100 // Espaço necessário para uma via completa
-          
-          if (currentY + spaceNeeded > pageHeight - 20) {
-            // Não há espaço suficiente, criar nova página
-            pdf.addPage()
-            currentY = 10
-          } else if (index > 0) {
+          if (index > 0) {
             // Adicionar linha pontilhada de separação
-            this.addDottedLine(pdf, currentY - 3, pageWidth)
-            currentY += 3
+            this.addDottedLine(pdf, currentY - 5, pageWidth)
+            currentY += 5
           }
 
           // Adicionar cabeçalho da via
@@ -614,13 +607,23 @@ export class PDFExportUtil {
           // Adicionar título da via
           currentY = this.addViaTitle(pdf, currentY, via.title, ticketData.id, pageWidth)
           
-          // Adicionar dados principais do ticket (que agora inclui hodômetro e destinos)
+          // Adicionar dados principais do ticket
           currentY = this.addMainTicketData(pdf, currentY, ticketData, pageWidth)
+          
+          // Adicionar seção de hodômetro se necessário
+          if (via.showHodometro) {
+            currentY = this.addHodometroSection(pdf, currentY, ticketData, pageWidth)
+          }
+          
+          // Adicionar tabela de destinos se necessário
+          if (via.showDestinos) {
+            currentY = this.addDestinosTable(pdf, currentY, ticketData, pageWidth)
+          }
           
           // Adicionar rodapé da via
           currentY = this.addTicketFooter(pdf, currentY, currentUser, pageWidth)
           
-          currentY += 6 // Espaço mínimo entre vias
+          currentY += 15 // Espaço entre vias
         })
 
         // Salvar log de exportação
@@ -643,41 +646,41 @@ export class PDFExportUtil {
   private static addTicketHeader(pdf: jsPDF, startY: number, config: TicketHeaderConfig, pageWidth: number): number {
     let currentY = startY
     
-    // Espaço reservado para logo (20x20mm - ainda menor)
+    // Espaço reservado para logo (30x30mm)
     pdf.setDrawColor(200, 200, 200)
-    pdf.rect(10, currentY, 20, 20)
-    pdf.setFontSize(7)
+    pdf.rect(10, currentY, 30, 30)
+    pdf.setFontSize(8)
     pdf.setTextColor(150, 150, 150)
-    pdf.text("LOGO", 20, currentY + 12, { align: 'center' })
+    pdf.text("LOGO", 25, currentY + 17, { align: 'center' })
     
     // Dados da organização
     pdf.setTextColor(0, 0, 0)
-    pdf.setFontSize(10) // Fonte menor
+    pdf.setFontSize(12)
     pdf.setFont('helvetica', 'bold')
-    pdf.text(config.organizacao, 35, currentY + 5)
+    pdf.text(config.organizacao, 45, currentY + 8)
     
-    pdf.setFontSize(6) // Fonte muito menor
+    pdf.setFontSize(8)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(`${config.cnpj} - ${config.email} - ${config.telefone}`, 35, currentY + 10)
-    pdf.text(config.endereco, 35, currentY + 14)
+    pdf.text(`${config.cnpj} - ${config.email} - ${config.telefone}`, 45, currentY + 15)
+    pdf.text(config.endereco, 45, currentY + 20)
     
     // Linha separadora
     pdf.setDrawColor(0, 0, 0)
-    pdf.line(10, currentY + 22, pageWidth - 10, currentY + 22)
+    pdf.line(10, currentY + 35, pageWidth - 10, currentY + 35)
     
-    return currentY + 26 // Espaçamento muito reduzido
+    return currentY + 40
   }
 
   /**
    * Adiciona o título da via e número do ticket
    */
   private static addViaTitle(pdf: jsPDF, startY: number, viaTitle: string, ticketId: string, pageWidth: number): number {
-    pdf.setFontSize(8) // Fonte menor
+    pdf.setFontSize(10)
     pdf.setFont('helvetica', 'bold')
     const titleText = `${viaTitle} | TICKET DE ABASTECIMENTO Nº ${ticketId}`
-    pdf.text(titleText, 15, startY + 3) // Alinhamento à esquerda
+    pdf.text(titleText, pageWidth / 2, startY + 5, { align: 'center' })
     
-    return startY + 8 // Espaçamento muito reduzido
+    return startY + 15
   }
 
   /**
@@ -687,10 +690,10 @@ export class PDFExportUtil {
     const boxX = 15
     const boxY = startY
     const boxWidth = pageWidth - 30
-    const boxHeight = 55 // Altura reduzida
+    const boxHeight = 45
     const cornerRadius = 3
     
-    // Desenhar caixa
+    // Desenhar caixa com bordas arredondadas
     pdf.setDrawColor(0, 0, 0)
     pdf.setLineWidth(0.5)
     this.drawRoundedRect(pdf, boxX, boxY, boxWidth, boxHeight, cornerRadius)
@@ -699,7 +702,7 @@ export class PDFExportUtil {
     const vehicleData = this.getVehicleData(ticket.veiculo)
     
     // Dados do ticket
-    pdf.setFontSize(8) // Fonte menor
+    pdf.setFontSize(10)
     pdf.setFont('helvetica', 'normal')
     
     const dataFormatada = ticket.data instanceof Date 
@@ -707,94 +710,79 @@ export class PDFExportUtil {
       : format(new Date(ticket.data), 'dd/MM/yyyy', { locale: ptBR })
     
     // Primeira linha: Secretaria, Dpto, Data
-    let textY = boxY + 5 // Espaçamento mínimo
+    let textY = boxY + 10
     pdf.setFont('helvetica', 'bold')
-    pdf.text("Secretaria:", boxX + 2, textY)
+    pdf.text("Secretaria:", boxX + 5, textY)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(ticket.secretaria, boxX + 24, textY)
+    pdf.text(ticket.secretaria, boxX + 28, textY)
     
     pdf.setFont('helvetica', 'bold')
-    pdf.text("Dpto:", boxX + 55, textY)
+    pdf.text("Dpto:", boxX + 65, textY)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(ticket.departamento, boxX + 68, textY)
+    pdf.text(ticket.departamento, boxX + 80, textY)
     
     pdf.setFont('helvetica', 'bold')
-    pdf.text("Data:", boxX + 110, textY)
+    pdf.text("Data:", boxX + 120, textY)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(dataFormatada, boxX + 123, textY)
+    pdf.text(dataFormatada, boxX + 135, textY)
     
     // Segunda linha: Motorista
-    textY += 5 // Espaçamento mínimo
+    textY += 8
     pdf.setFont('helvetica', 'bold')
-    pdf.text("Motorista:", boxX + 2, textY)
+    pdf.text("Motorista:", boxX + 5, textY)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(ticket.motorista, boxX + 24, textY)
+    pdf.text(ticket.motorista, boxX + 28, textY)
     
     // Terceira linha: CNH, Categoria, Placa, Nº, Marca, Modelo
-    textY += 5 // Espaçamento mínimo
+    textY += 8
     pdf.setFont('helvetica', 'bold')
-    pdf.text("CNH:", boxX + 2, textY)
+    pdf.text("CNH:", boxX + 5, textY)
     
-    pdf.text("Categoria:", boxX + 30, textY)
+    pdf.text("Categoria:", boxX + 40, textY)
     
-    pdf.text("Placa:", boxX + 70, textY)
+    pdf.text("Placa:", boxX + 80, textY)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(ticket.veiculo, boxX + 85, textY)
-    
-    pdf.setFont('helvetica', 'bold')
-    pdf.text("Nº", boxX + 115, textY)
-    
-    pdf.text("Marca:", boxX + 130, textY)
-    pdf.setFont('helvetica', 'normal')
-    pdf.text(vehicleData.marca, boxX + 145, textY)
+    pdf.text(ticket.veiculo, boxX + 95, textY)
     
     pdf.setFont('helvetica', 'bold')
-    pdf.text("Modelo:", boxX + 2, textY + 5)
+    pdf.text("Nº", boxX + 125, textY)
+    
+    pdf.text("Marca:", boxX + 140, textY)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(vehicleData.modelo, boxX + 20, textY + 5)
+    pdf.text(vehicleData.marca, boxX + 155, textY)
+    
+    pdf.setFont('helvetica', 'bold')
+    pdf.text("Modelo:", boxX + 5, textY + 8)
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(vehicleData.modelo, boxX + 25, textY + 8)
     
     // Quarta linha: Combustível, Quantidade, Valor, Total
-    textY += 10 // Espaçamento mínimo
+    textY += 16
     pdf.setFont('helvetica', 'bold')
-    pdf.text("Combustível:", boxX + 2, textY)
+    pdf.text("Combustível:", boxX + 5, textY)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(ticket.combustivel, boxX + 27, textY)
+    pdf.text(ticket.combustivel, boxX + 32, textY)
     
     pdf.setFont('helvetica', 'bold')
-    pdf.text("Quantidade:", boxX + 60, textY)
+    pdf.text("Quantidade:", boxX + 70, textY)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(`${ticket.quantidade} L`, boxX + 85, textY)
+    pdf.text(`${ticket.quantidade} L`, boxX + 98, textY)
     
     pdf.setFont('helvetica', 'bold')
-    pdf.text("Valor:", boxX + 120, textY)
+    pdf.text("Valor:", boxX + 130, textY)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(`R$ ${ticket.valor}`, boxX + 135, textY)
+    pdf.text(`R$ ${ticket.valor}`, boxX + 145, textY)
     
     pdf.setFont('helvetica', 'bold')
-    pdf.text("Total:", boxX + 2, textY + 5)
+    pdf.text("Total:", boxX + 5, textY + 8)
     pdf.setFont('helvetica', 'normal')
-    pdf.text(`R$ ${ticket.total}`, boxX + 17, textY + 5)
+    pdf.text(`R$ ${ticket.total}`, boxX + 20, textY + 8)
     
-    // Linha separadora
-    textY += 10
+    // Linha horizontal separadora dentro da caixa
     pdf.setDrawColor(0, 0, 0)
-    pdf.line(boxX + 2, textY, boxX + boxWidth - 2, textY)
+    pdf.line(boxX + 5, boxY + boxHeight - 8, boxX + boxWidth - 5, boxY + boxHeight - 8)
     
-    // Status do hodômetro
-    textY += 6
-    pdf.setFont('helvetica', 'bold')
-    const hodometroStatus = ticket.resumo.hodometroFuncional ? "Não" : "Sim"
-    pdf.text(`Hodômetro Danificado: ${hodometroStatus}`, boxX + 2, textY)
-    
-    // Partida e Destino
-    textY += 6
-    pdf.setFont('helvetica', 'bold')
-    pdf.text("Partida e Destino:", boxX + 2, textY)
-    pdf.setFont('helvetica', 'normal')
-    const partidaDestino = `${ticket.partida || 'Marajal'} / ${ticket.destino || 'N/A'}`
-    pdf.text(partidaDestino, boxX + 35, textY)
-    
-    return startY + boxHeight + 8
+    return startY + boxHeight + 15
   }
 
   /**
@@ -802,6 +790,9 @@ export class PDFExportUtil {
    */
   private static getVehicleData(placa: string): { marca: string; modelo: string } {
     try {
+      // Importar o storageService se necessário
+      const { storageService } = require('@/lib/storage-service')
+      
       // Buscar nos veículos registrados
       const veiculos = storageService.getVeiculos() || []
       const veiculo = veiculos.find((v: any) => 
@@ -838,23 +829,73 @@ export class PDFExportUtil {
    * Desenha um retângulo com bordas arredondadas
    */
   private static drawRoundedRect(pdf: jsPDF, x: number, y: number, width: number, height: number, radius: number): void {
-    // Implementação simples usando retângulo normal por enquanto
-    // TODO: Implementar bordas arredondadas quando suportado
+    pdf.lines([
+      [radius, 0],
+      [width - 2 * radius, 0],
+      [radius, 0, radius, -radius, 0, -radius], // top-right corner
+      [0, -(height - 2 * radius)],
+      [0, -radius, -radius, -radius, -radius, 0], // bottom-right corner
+      [-(width - 2 * radius), 0],
+      [-radius, 0, -radius, radius, 0, radius], // bottom-left corner
+      [0, height - 2 * radius],
+      [0, radius, radius, radius, radius, 0] // top-left corner
+    ], x + radius, y, [1, 1], null, true)
+  }
+
+  /**
+   * Adiciona a seção de hodômetro danificado
+   */
+  private static addHodometroSection(pdf: jsPDF, startY: number, ticket: IndividualTicketData, pageWidth: number): number {
+    pdf.setFontSize(9)
+    pdf.setFont('helvetica', 'bold')
+    
+    const hodometroStatus = ticket.resumo.hodometroFuncional ? "Não" : "Sim"
+    pdf.text(`Hodômetro Danificado: ${hodometroStatus}`, 15, startY)
+    
+    return startY + 10
+  }
+
+  /**
+   * Adiciona a tabela de partida e destino
+   */
+  private static addDestinosTable(pdf: jsPDF, startY: number, ticket: IndividualTicketData, pageWidth: number): number {
+    const tableX = 15
+    const tableY = startY
+    const tableWidth = pageWidth - 30
+    const headerHeight = 8
+    const rowHeight = 15
+    
+    // Cabeçalho da tabela
     pdf.setDrawColor(0, 0, 0)
-    pdf.setLineWidth(0.5)
-    pdf.rect(x, y, width, height)
+    pdf.rect(tableX, tableY, tableWidth * 0.3, headerHeight)
+    pdf.rect(tableX + tableWidth * 0.3, tableY, tableWidth * 0.7, headerHeight)
+    
+    pdf.setFontSize(9)
+    pdf.setFont('helvetica', 'bold')
+    pdf.text("Partida", tableX + (tableWidth * 0.15), tableY + 5, { align: 'center' })
+    pdf.text("Destino", tableX + tableWidth * 0.3 + (tableWidth * 0.35), tableY + 5, { align: 'center' })
+    
+    // Dados da tabela
+    pdf.rect(tableX, tableY + headerHeight, tableWidth * 0.3, rowHeight)
+    pdf.rect(tableX + tableWidth * 0.3, tableY + headerHeight, tableWidth * 0.7, rowHeight)
+    
+    pdf.setFont('helvetica', 'normal')
+    pdf.text(ticket.partida || "Marajal", tableX + 2, tableY + headerHeight + 8)
+    pdf.text(ticket.destino || "", tableX + tableWidth * 0.3 + 2, tableY + headerHeight + 8)
+    
+    return startY + headerHeight + rowHeight + 10
   }
 
   /**
    * Adiciona o rodapé do ticket com assinaturas e linhas
    */
   private static addTicketFooter(pdf: jsPDF, startY: number, currentUser: string, pageWidth: number): number {
-    const footerY = startY + 15 // Espaçamento reduzido
+    const footerY = startY + 20
     const sectionWidth = (pageWidth - 30) / 3
     const startX = 15
-    const lineLength = sectionWidth - 8 // Linhas menores
+    const lineLength = sectionWidth - 10
     
-    pdf.setFontSize(8) // Fonte menor
+    pdf.setFontSize(10)
     pdf.setFont('helvetica', 'normal')
     pdf.setDrawColor(0, 0, 0)
     pdf.setLineWidth(0.5)
@@ -862,19 +903,19 @@ export class PDFExportUtil {
     // Primeira seção - Usuário
     const userX = startX + sectionWidth * 0.5
     pdf.line(userX - lineLength/2, footerY, userX + lineLength/2, footerY)
-    pdf.text(currentUser, userX, footerY + 6, { align: 'center' })
+    pdf.text(currentUser, userX, footerY + 8, { align: 'center' })
     
     // Segunda seção - Posto  
     const postoX = startX + sectionWidth * 1.5
     pdf.line(postoX - lineLength/2, footerY, postoX + lineLength/2, footerY)
-    pdf.text("Posto", postoX, footerY + 6, { align: 'center' })
+    pdf.text("Posto", postoX, footerY + 8, { align: 'center' })
     
     // Terceira seção - Fiscal
     const fiscalX = startX + sectionWidth * 2.5
     pdf.line(fiscalX - lineLength/2, footerY, fiscalX + lineLength/2, footerY)
-    pdf.text("Fiscal", fiscalX, footerY + 6, { align: 'center' })
+    pdf.text("Fiscal", fiscalX, footerY + 8, { align: 'center' })
     
-    return footerY + 12
+    return footerY + 15
   }
 
   /**

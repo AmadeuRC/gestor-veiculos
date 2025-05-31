@@ -16,6 +16,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/lib/hooks/useAuth"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -26,10 +27,10 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b border-blue-200">
+      <SidebarHeader className="border-b border-blue-200 dark:border-blue-800">
         <div className="flex h-14 items-center px-4">
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-blue-700">
-            <Home className="h-5 w-5 text-blue-600" />
+          <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-blue-700 dark:text-blue-300">
+            <Home className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             <span>Sistema de Gestão</span>
           </Link>
         </div>
@@ -39,7 +40,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname === "/dashboard"}>
               <Link href="/dashboard">
-                <Home className="text-blue-600" />
+                <Home className="text-blue-600 dark:text-blue-400" />
                 <span>Início</span>
               </Link>
             </SidebarMenuButton>
@@ -48,7 +49,7 @@ export function AppSidebar() {
           {/* Combustível */}
           <SidebarMenuItem>
             <SidebarMenuButton>
-              <Fuel className="text-blue-600" />
+              <Fuel className="text-blue-600 dark:text-blue-400" />
               <span>Combustível</span>
             </SidebarMenuButton>
             <SidebarMenuSub>
@@ -93,7 +94,7 @@ export function AppSidebar() {
           {/* Veículos */}
           <SidebarMenuItem>
             <SidebarMenuButton>
-              <Truck className="text-blue-600" />
+              <Truck className="text-blue-600 dark:text-blue-400" />
               <span>Veículos</span>
             </SidebarMenuButton>
             <SidebarMenuSub>
@@ -124,7 +125,7 @@ export function AppSidebar() {
           {/* Funcionários */}
           <SidebarMenuItem>
             <SidebarMenuButton>
-              <Users className="text-blue-600" />
+              <Users className="text-blue-600 dark:text-blue-400" />
               <span>Funcionários</span>
             </SidebarMenuButton>
             <SidebarMenuSub>
@@ -156,7 +157,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton asChild isActive={pathname === "/dashboard/log"}>
               <Link href="/dashboard/log">
-                <FileText className="text-blue-600" />
+                <FileText className="text-blue-600 dark:text-blue-400" />
                 <span>LOG Sistema</span>
               </Link>
             </SidebarMenuButton>
@@ -167,7 +168,7 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={pathname === "/dashboard/admin"}>
                 <Link href="/dashboard/admin">
-                  <UserCog className="text-blue-600" />
+                  <UserCog className="text-blue-600 dark:text-blue-400" />
                   <span>Administração</span>
                 </Link>
               </SidebarMenuButton>
@@ -175,8 +176,13 @@ export function AppSidebar() {
           )}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="border-t border-blue-200 p-4">
-        <div className="text-xs text-blue-500">Sistema de Gestão Municipal v1.0</div>
+      <SidebarFooter className="border-t border-blue-200 dark:border-blue-800">
+        <div className="flex items-center justify-between p-4">
+          <div className="text-xs text-blue-500 dark:text-blue-400">
+            Sistema de Gestão Municipal v1.0
+          </div>
+          <ThemeToggle />
+        </div>
       </SidebarFooter>
     </Sidebar>
   )

@@ -595,17 +595,10 @@ export class PDFExportUtil {
 
         // Gerar cada via
         vias.forEach((via, index) => {
-          // Verificar se há espaço suficiente na página (aproximadamente 100mm por via)
-          const spaceNeeded = 100 // Espaço necessário para uma via completa
-          
-          if (currentY + spaceNeeded > pageHeight - 20) {
-            // Não há espaço suficiente, criar nova página
-            pdf.addPage()
-            currentY = 10
-          } else if (index > 0) {
+          if (index > 0) {
             // Adicionar linha pontilhada de separação
-            this.addDottedLine(pdf, currentY - 3, pageWidth)
-            currentY += 3
+            this.addDottedLine(pdf, currentY - 5, pageWidth)
+            currentY += 5
           }
 
           // Adicionar cabeçalho da via
@@ -620,7 +613,7 @@ export class PDFExportUtil {
           // Adicionar rodapé da via
           currentY = this.addTicketFooter(pdf, currentY, currentUser, pageWidth)
           
-          currentY += 6 // Espaço mínimo entre vias
+          currentY += 10 // Espaço reduzido entre vias
         })
 
         // Salvar log de exportação
@@ -675,7 +668,7 @@ export class PDFExportUtil {
     pdf.setFontSize(8) // Fonte menor
     pdf.setFont('helvetica', 'bold')
     const titleText = `${viaTitle} | TICKET DE ABASTECIMENTO Nº ${ticketId}`
-    pdf.text(titleText, 15, startY + 3) // Alinhamento à esquerda
+    pdf.text(titleText, pageWidth / 2, startY + 3, { align: 'center' })
     
     return startY + 8 // Espaçamento muito reduzido
   }

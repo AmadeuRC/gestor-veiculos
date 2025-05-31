@@ -8,15 +8,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { NovoAbastecimentoForm } from "@/components/novo-abastecimento-form"
-import { ExternalLink, FileSpreadsheet, MoreHorizontal, Plus, Trash, ChevronLeft, ChevronRight } from "lucide-react"
+import { ExternalLink, FileSpreadsheet, MoreHorizontal, Plus, Trash, ChevronLeft, ChevronRight, FileText } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { storageService } from "@/lib/storage-service"
 import { PDFExportButton } from "@/components/ui/pdf-export-button"
 import { format, isWithinInterval, parseISO } from "date-fns"
-import { TableCellData } from "@/lib/utils/pdf-export.util"
+import { TableCellData, TicketData, IndividualTicketData, PDFExportOptions } from "@/lib/utils/pdf-export.util"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PDFExportUtil } from "@/lib/utils/pdf-export.util"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useAuth } from "@/lib/hooks/useAuth"
 
 // Definição de tipos para o Ticket
 interface TicketResumo {
@@ -64,14 +67,20 @@ export default function TicketPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
+  
+  // Estados para exportação aprimorada
+  const [exportType, setExportType] = useState<'data' | 'carro' | 'motorista'>('data')
   const [exportDateRange, setExportDateRange] = useState({
     startDate: format(new Date(new Date().setDate(1)), "yyyy-MM-dd"), // Primeiro dia do mês atual
     endDate: format(new Date(), "yyyy-MM-dd") // Hoje
   })
+  const [selectedVehicle, setSelectedVehicle] = useState<string>("")
+  const [selectedDriver, setSelectedDriver] = useState<string>("")
   const [isExporting, setIsExporting] = useState(false)
   
   const itemsPerPage = 10
   const { toast } = useToast()
+  const { user } = useAuth()
 
   // Carregar tickets do armazenamento local ao inicializar
   useEffect(() => {
@@ -94,31 +103,225 @@ export default function TicketPage() {
     console.log("Estado do diálogo de exportação:", isExportDialogOpen);
   }, [isExportDialogOpen]);
 
-  // Preparar dados para exportação de PDF com filtro de datas
-  const prepareExportData = (startDate?: string, endDate?: string) => {
+  // Função para obter veículos únicos dos tickets com informações detalhadas
+  const getUniqueVehicles = () => {
+    // Criar um mapa dos veículos únicos dos tickets (que contém placas)
+    const ticketVehicles = [...new Set(tickets.map(ticket => ticket.veiculo))].filter(Boolean)
+    
+    // Para cada placa única, buscar informações nos veículos registrados
+    const detailedVehicles = ticketVehicles.map(placaFromTicket => {
+      // Tentar encontrar o veículo registrado correspondente à placa
+      try {
+        const vehiclesFromStorage = storageService.getVeiculos() || []
+        
+        // Buscar veículo pela placa
+        const vehicleFromStorage = vehiclesFromStorage.find(v => 
+          v && v.placa && (
+            v.placa.trim().toLowerCase() === placaFromTicket.trim().toLowerCase()
+          )
+        )
+        
+        if (vehicleFromStorage) {
+          // Se encontrou o veículo registrado, usar marca + modelo
+          const marcaModelo = vehicleFromStorage.veiculo || `${vehicleFromStorage.marca || ''} ${vehicleFromStorage.modelo || ''}`.trim()
+          
+          if (marcaModelo) {
+            return {
+              value: placaFromTicket,
+              displayName: `${placaFromTicket} - ${marcaModelo}`,
+              placa: placaFromTicket,
+              nome: marcaModelo
+            }
+          }
+        }
+        
+        // Se não encontrou nos veículos registrados, tentar usar dados do storage alternativo
+        const veiculosRegistrados = storageService.getVeiculosRegistrados() || []
+        const veiculoRegistrado = veiculosRegistrados.find(v =>
+          v && v.placa && (
+            v.placa.trim().toLowerCase() === placaFromTicket.trim().toLowerCase()
+          )
+        )
+        
+        if (veiculoRegistrado) {
+          const marcaModelo = `${veiculoRegistrado.marca || ''} ${veiculoRegistrado.modelo || ''}`.trim()
+          
+          if (marcaModelo) {
+            return {
+              value: placaFromTicket,
+              displayName: `${placaFromTicket} - ${marcaModelo}`,
+              placa: placaFromTicket,
+              nome: marcaModelo
+            }
+          }
+        }
+        
+      } catch (error) {
+        console.log("Erro ao acessar veículos registrados:", error)
+      }
+      
+      // Fallback: apenas a placa
+      return {
+        value: placaFromTicket,
+        displayName: placaFromTicket,
+        placa: placaFromTicket,
+        nome: null
+      }
+    })
+    
+    // Filtrar itens inválidos e ordenar por nome de exibição
+    return detailedVehicles
+      .filter(v => v && v.value && v.displayName)
+      .sort((a, b) => a.displayName.localeCompare(b.displayName))
+  }
+
+  // Função para obter motoristas únicos dos tickets
+  const getUniqueDrivers = () => {
+    const drivers = [...new Set(tickets.map(ticket => ticket.motorista))].filter(Boolean)
+    return drivers.sort()
+  }
+
+  // Função para formatar placa + modelo / motorista
+  const formatPlacaModeloMotorista = (ticket: Ticket) => {
+    const placa = ticket.veiculo // O campo veiculo contém a placa
+    const motorista = ticket.motorista
+    
+    // Tentar buscar o modelo nos veículos registrados
+    try {
+      const vehiclesFromStorage = storageService.getVeiculos() || []
+      
+      // Buscar veículo pela placa
+      const vehicleFromStorage = vehiclesFromStorage.find(v => 
+        v && v.placa && (
+          v.placa.trim().toLowerCase() === placa.trim().toLowerCase()
+        )
+      )
+      
+      if (vehicleFromStorage) {
+        // Se encontrou o veículo registrado, usar marca + modelo
+        const marcaModelo = vehicleFromStorage.veiculo || `${vehicleFromStorage.marca || ''} ${vehicleFromStorage.modelo || ''}`.trim()
+        
+        if (marcaModelo) {
+          return `${placa} ${marcaModelo} / ${motorista}`
+        }
+      }
+      
+      // Se não encontrou nos veículos registrados, tentar usar dados do storage alternativo
+      const veiculosRegistrados = storageService.getVeiculosRegistrados() || []
+      const veiculoRegistrado = veiculosRegistrados.find(v =>
+        v && v.placa && (
+          v.placa.trim().toLowerCase() === placa.trim().toLowerCase()
+        )
+      )
+      
+      if (veiculoRegistrado) {
+        const marcaModelo = `${veiculoRegistrado.marca || ''} ${veiculoRegistrado.modelo || ''}`.trim()
+        
+        if (marcaModelo) {
+          return `${placa} ${marcaModelo} / ${motorista}`
+        }
+      }
+      
+    } catch (error) {
+      console.log("Erro ao buscar modelo do veículo:", error)
+    }
+    
+    // Fallback: usar o formato original
+    return ticket.placaMotorista || `${placa} / ${motorista}`
+  }
+
+  // Preparar dados para exportação com filtros aprimorados
+  const prepareExportData = (filterType: 'data' | 'carro' | 'motorista', filterValues: any) => {
     const headers = [
       "Ticket", "Data", "Secretaria", "Departamento", "Placa/Motorista", 
       "Status Hodômetro", "Início", "Fim", "Distância", "Média",
       "Quantidade (L)", "Valor (R$)", "Total (R$)"
     ]
     
-    // Filtrar por intervalo de datas, se fornecido
     let filteredTickets = [...tickets];
+    let subtitleText = "";
     
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      
-      filteredTickets = tickets.filter(ticket => {
-        const ticketDate = ticket.data instanceof Date ? 
-          ticket.data : 
-          (typeof ticket.data === 'string' ? new Date(ticket.data) : new Date());
+    // Aplicar filtros baseados no tipo selecionado
+    switch (filterType) {
+      case 'data':
+        if (filterValues.startDate && filterValues.endDate) {
+          const start = new Date(filterValues.startDate);
+          start.setHours(0, 0, 0, 0);
+          
+          const end = new Date(filterValues.endDate);
+          end.setHours(23, 59, 59, 999);
+          
+          filteredTickets = tickets.filter(ticket => {
+            const ticketDate = ticket.data instanceof Date ? 
+              ticket.data : 
+              (typeof ticket.data === 'string' ? new Date(ticket.data) : new Date());
+            
+            return ticketDate >= start && ticketDate <= end;
+          });
+          
+          const startDateFormatted = format(new Date(filterValues.startDate), "dd/MM/yyyy");
+          const endDateFormatted = format(new Date(filterValues.endDate), "dd/MM/yyyy");
+          subtitleText = `Filtro por Data: ${startDateFormatted} a ${endDateFormatted}`;
+        }
+        break;
         
-        return ticketDate >= start && ticketDate <= end;
-      });
+      case 'carro':
+        if (filterValues.vehicle) {
+          // Primeiro filtrar por veículo
+          filteredTickets = tickets.filter(ticket => ticket.veiculo === filterValues.vehicle);
+          subtitleText = `Filtro por Veículo: ${filterValues.vehicle}`;
+          
+          // Depois aplicar filtro de data se fornecido
+          if (filterValues.startDate && filterValues.endDate) {
+            const start = new Date(filterValues.startDate);
+            start.setHours(0, 0, 0, 0);
+            
+            const end = new Date(filterValues.endDate);
+            end.setHours(23, 59, 59, 999);
+            
+            filteredTickets = filteredTickets.filter(ticket => {
+              const ticketDate = ticket.data instanceof Date ? 
+                ticket.data : 
+                (typeof ticket.data === 'string' ? new Date(ticket.data) : new Date());
+              
+              return ticketDate >= start && ticketDate <= end;
+            });
+            
+            const startDateFormatted = format(new Date(filterValues.startDate), "dd/MM/yyyy");
+            const endDateFormatted = format(new Date(filterValues.endDate), "dd/MM/yyyy");
+            subtitleText += ` | Período: ${startDateFormatted} a ${endDateFormatted}`;
+          }
+        }
+        break;
+        
+      case 'motorista':
+        if (filterValues.driver) {
+          // Primeiro filtrar por motorista
+          filteredTickets = tickets.filter(ticket => ticket.motorista === filterValues.driver);
+          subtitleText = `Filtro por Motorista: ${filterValues.driver}`;
+          
+          // Depois aplicar filtro de data se fornecido
+          if (filterValues.startDate && filterValues.endDate) {
+            const start = new Date(filterValues.startDate);
+            start.setHours(0, 0, 0, 0);
+            
+            const end = new Date(filterValues.endDate);
+            end.setHours(23, 59, 59, 999);
+            
+            filteredTickets = filteredTickets.filter(ticket => {
+              const ticketDate = ticket.data instanceof Date ? 
+                ticket.data : 
+                (typeof ticket.data === 'string' ? new Date(ticket.data) : new Date());
+              
+              return ticketDate >= start && ticketDate <= end;
+            });
+            
+            const startDateFormatted = format(new Date(filterValues.startDate), "dd/MM/yyyy");
+            const endDateFormatted = format(new Date(filterValues.endDate), "dd/MM/yyyy");
+            subtitleText += ` | Período: ${startDateFormatted} a ${endDateFormatted}`;
+          }
+        }
+        break;
     }
     
     // Ordenar por data (mais recente primeiro)
@@ -144,43 +347,170 @@ export default function TicketPage() {
       ticket.total ?? ""
     ])
     
-    return { headers, data, count: filteredTickets.length }
+    return { headers, data, count: filteredTickets.length, subtitle: subtitleText }
   }
-  
-  // Função para exportar com intervalo de datas selecionado
-  const handleExportWithDateRange = async () => {
+
+  // Função para exportar com filtros aprimorados
+  const handleExportWithFilters = async () => {
     try {
       setIsExporting(true);
-      const { startDate, endDate } = exportDateRange;
-      const { headers, data, count } = prepareExportData(startDate, endDate);
       
-      if (count === 0) {
+      let filterValues: any = {};
+      let filename = "tickets-abastecimento";
+      
+      switch (exportType) {
+        case 'data':
+          filterValues = { startDate: exportDateRange.startDate, endDate: exportDateRange.endDate };
+          const startDateFormatted = format(new Date(exportDateRange.startDate), "dd-MM-yyyy");
+          const endDateFormatted = format(new Date(exportDateRange.endDate), "dd-MM-yyyy");
+          filename = `tickets-abastecimento-${startDateFormatted}-a-${endDateFormatted}`;
+          break;
+          
+        case 'carro':
+          filterValues = { 
+            vehicle: selectedVehicle,
+            startDate: exportDateRange.startDate, 
+            endDate: exportDateRange.endDate 
+          };
+          const carStartDate = format(new Date(exportDateRange.startDate), "dd-MM-yyyy");
+          const carEndDate = format(new Date(exportDateRange.endDate), "dd-MM-yyyy");
+          filename = `tickets-abastecimento-veiculo-${selectedVehicle}-${carStartDate}-a-${carEndDate}`;
+          break;
+          
+        case 'motorista':
+          filterValues = { 
+            driver: selectedDriver,
+            startDate: exportDateRange.startDate, 
+            endDate: exportDateRange.endDate 
+          };
+          const driverStartDate = format(new Date(exportDateRange.startDate), "dd-MM-yyyy");
+          const driverEndDate = format(new Date(exportDateRange.endDate), "dd-MM-yyyy");
+          filename = `tickets-abastecimento-motorista-${selectedDriver.replace(/\s+/g, '-')}-${driverStartDate}-a-${driverEndDate}`;
+          break;
+      }
+      
+      // Preparar dados filtrados
+      let filteredTickets = [...tickets];
+      let subtitleText = "";
+      
+      // Aplicar filtros baseados no tipo selecionado
+      switch (exportType) {
+        case 'data':
+          if (filterValues.startDate && filterValues.endDate) {
+            const start = new Date(filterValues.startDate);
+            start.setHours(0, 0, 0, 0);
+            
+            const end = new Date(filterValues.endDate);
+            end.setHours(23, 59, 59, 999);
+            
+            filteredTickets = tickets.filter(ticket => {
+              const ticketDate = ticket.data instanceof Date ? 
+                ticket.data : 
+                (typeof ticket.data === 'string' ? new Date(ticket.data) : new Date());
+              
+              return ticketDate >= start && ticketDate <= end;
+            });
+            
+            const startDateFormatted = format(new Date(filterValues.startDate), "dd/MM/yyyy");
+            const endDateFormatted = format(new Date(filterValues.endDate), "dd/MM/yyyy");
+            subtitleText = `Filtro por Data: ${startDateFormatted} a ${endDateFormatted}`;
+          }
+          break;
+          
+        case 'carro':
+          if (filterValues.vehicle) {
+            filteredTickets = tickets.filter(ticket => ticket.veiculo === filterValues.vehicle);
+            subtitleText = `Filtro por Veículo: ${filterValues.vehicle}`;
+            
+            if (filterValues.startDate && filterValues.endDate) {
+              const start = new Date(filterValues.startDate);
+              start.setHours(0, 0, 0, 0);
+              
+              const end = new Date(filterValues.endDate);
+              end.setHours(23, 59, 59, 999);
+              
+              filteredTickets = filteredTickets.filter(ticket => {
+                const ticketDate = ticket.data instanceof Date ? 
+                  ticket.data : 
+                  (typeof ticket.data === 'string' ? new Date(ticket.data) : new Date());
+                
+                return ticketDate >= start && ticketDate <= end;
+              });
+              
+              const startDateFormatted = format(new Date(filterValues.startDate), "dd/MM/yyyy");
+              const endDateFormatted = format(new Date(filterValues.endDate), "dd/MM/yyyy");
+              subtitleText += ` | Período: ${startDateFormatted} a ${endDateFormatted}`;
+            }
+          }
+          break;
+          
+        case 'motorista':
+          if (filterValues.driver) {
+            filteredTickets = tickets.filter(ticket => ticket.motorista === filterValues.driver);
+            subtitleText = `Filtro por Motorista: ${filterValues.driver}`;
+            
+            if (filterValues.startDate && filterValues.endDate) {
+              const start = new Date(filterValues.startDate);
+              start.setHours(0, 0, 0, 0);
+              
+              const end = new Date(filterValues.endDate);
+              end.setHours(23, 59, 59, 999);
+              
+              filteredTickets = filteredTickets.filter(ticket => {
+                const ticketDate = ticket.data instanceof Date ? 
+                  ticket.data : 
+                  (typeof ticket.data === 'string' ? new Date(ticket.data) : new Date());
+                
+                return ticketDate >= start && ticketDate <= end;
+              });
+              
+              const startDateFormatted = format(new Date(filterValues.startDate), "dd/MM/yyyy");
+              const endDateFormatted = format(new Date(filterValues.endDate), "dd/MM/yyyy");
+              subtitleText += ` | Período: ${startDateFormatted} a ${endDateFormatted}`;
+            }
+          }
+          break;
+      }
+      
+      if (filteredTickets.length === 0) {
         toast({
           variant: "destructive",
           title: "Nenhum registro encontrado",
-          description: "Não há tickets no intervalo de datas selecionado."
+          description: "Não há tickets com os filtros selecionados."
         });
         setIsExporting(false);
         return;
       }
       
-      const startDateFormatted = format(new Date(startDate), "dd/MM/yyyy");
-      const endDateFormatted = format(new Date(endDate), "dd/MM/yyyy");
+      // Converter tickets para o formato esperado pela nova função
+      const ticketsForExport = filteredTickets.map(ticket => ({
+        id: ticket.id ?? "",
+        data: ticket.data,
+        placaMotorista: formatPlacaModeloMotorista(ticket), // Placa Marca/Modelo
+        statusHodometro: ticket.resumo.hodometroFuncional ? "Funcional" : "Danificado",
+        partida: ticket.partida ?? "", // Partida (Cidade)
+        destino: ticket.destino ?? "", // Destino (Cidade)
+        partidaKm: ticket.partidaKm ?? "", // Partida km
+        destinoKm: ticket.destinoKm ?? "", // Destino km
+        quantidade: ticket.quantidade ?? "", // Quantidade (L)
+        valor: ticket.valor ?? "", // Valor do combustível (R$)
+        total: ticket.total ?? "" // Valor Total (R$)
+      }));
       
-      await PDFExportUtil.exportToPDF(
-        headers,
-        data,
+      // Usar a nova função de exportação por mês
+      await PDFExportUtil.exportTicketsByMonth(
+        ticketsForExport,
         {
-          title: "Tickets de Abastecimento",
-          subtitle: `Período: ${startDateFormatted} a ${endDateFormatted} - Total: ${count} registros`,
-          filename: `tickets-abastecimento-${startDateFormatted}-a-${endDateFormatted}`,
+          title: "Tickets de Abastecimento por Mês",
+          subtitle: `${subtitleText} - Total: ${filteredTickets.length} registros`,
+          filename: filename,
           orientation: "landscape"
         }
       );
       
       toast({
         title: "Exportação concluída",
-        description: `${count} tickets exportados com sucesso.`
+        description: `${filteredTickets.length} tickets exportados com sucesso por mês.`
       });
       
       setIsExportDialogOpen(false);
@@ -195,7 +525,14 @@ export default function TicketPage() {
       setIsExporting(false);
     }
   }
-  
+
+  // Função para resetar filtros ao mudar tipo de exportação
+  const handleExportTypeChange = (type: 'data' | 'carro' | 'motorista') => {
+    setExportType(type);
+    setSelectedVehicle("");
+    setSelectedDriver("");
+  }
+
   const handleDateRangeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setExportDateRange(prev => ({
@@ -228,9 +565,63 @@ export default function TicketPage() {
   }
 
   const handleDeleteTicket = (e: React.MouseEvent, ticket: Ticket) => {
-    e.stopPropagation() // Impede a propagação do evento para a linha
+    e.stopPropagation()
     setSelectedTicket(ticket)
     setIsDeleteDialogOpen(true)
+  }
+
+  const handleExportTicket = async (e: React.MouseEvent, ticket: Ticket) => {
+    e.stopPropagation()
+    
+    try {
+      setIsExporting(true)
+      
+      // Mapear dados do ticket para o formato de exportação individual
+      const ticketData: IndividualTicketData = {
+        id: ticket.id,
+        data: ticket.data,
+        secretaria: ticket.secretaria,
+        departamento: ticket.departamento,
+        motorista: ticket.motorista,
+        veiculo: ticket.veiculo,
+        placaMotorista: ticket.placaMotorista,
+        resumo: ticket.resumo,
+        quantidade: ticket.quantidade,
+        combustivel: ticket.combustivel,
+        valor: ticket.valor,
+        total: ticket.total,
+        hodometroDanificado: ticket.hodometroDanificado,
+        incluirDistancia: ticket.incluirDistancia,
+        distancia: ticket.distancia,
+        partida: ticket.partida,
+        partidaKm: ticket.partidaKm,
+        destino: ticket.destino,
+        destinoKm: ticket.destinoKm,
+        motivos: ticket.motivos,
+        beneficiados: ticket.beneficiados,
+        tipoRota: ticket.tipoRota
+      }
+      
+      // Usar o nome do usuário logado ou um padrão
+      const currentUser = user?.name || "Usuário"
+      
+      // Exportar o ticket individual
+      await PDFExportUtil.exportIndividualTicket(ticketData, currentUser)
+      
+      toast({
+        title: "Exportação concluída",
+        description: `Ticket ${ticket.id} exportado com sucesso!`,
+      })
+    } catch (error) {
+      console.error("Erro ao exportar ticket:", error)
+      toast({
+        title: "Erro na exportação",
+        description: "Ocorreu um erro ao exportar o ticket. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const confirmDelete = () => {
@@ -422,7 +813,7 @@ export default function TicketPage() {
   );
 
   // Obter dados para exportação
-  const { headers: pdfHeaders, data: pdfData } = prepareExportData();
+  const { headers: pdfHeaders, data: pdfData } = prepareExportData('data', { startDate: exportDateRange.startDate, endDate: exportDateRange.endDate });
 
   // Função para mudar de página
   const goToPage = (page: number) => {
@@ -471,40 +862,164 @@ export default function TicketPage() {
                 Exportar Tickets
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Exportar Tickets</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <p className="text-sm">Selecione o período de datas para exportação:</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startDate">Data Inicial</Label>
-                    <Input
-                      id="startDate"
-                      name="startDate"
-                      type="date"
-                      value={exportDateRange.startDate}
-                      onChange={handleDateRangeChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endDate">Data Final</Label>
-                    <Input
-                      id="endDate"
-                      name="endDate"
-                      type="date"
-                      value={exportDateRange.endDate}
-                      onChange={handleDateRangeChange}
-                    />
-                  </div>
+              <div className="space-y-6 py-4">
+                {/* Seleção do tipo de filtro */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Escolha o tipo de exportação:</Label>
+                  <RadioGroup value={exportType} onValueChange={handleExportTypeChange}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="data" id="data" />
+                      <Label htmlFor="data" className="cursor-pointer">Por Data</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="carro" id="carro" />
+                      <Label htmlFor="carro" className="cursor-pointer">Por Carro</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="motorista" id="motorista" />
+                      <Label htmlFor="motorista" className="cursor-pointer">Por Motorista</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
+
+                {/* Campos específicos para cada tipo */}
+                {exportType === 'data' && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">Selecione o período de datas para exportação:</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="startDate">Data Inicial</Label>
+                        <Input
+                          id="startDate"
+                          name="startDate"
+                          type="date"
+                          value={exportDateRange.startDate}
+                          onChange={handleDateRangeChange}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="endDate">Data Final</Label>
+                        <Input
+                          id="endDate"
+                          name="endDate"
+                          type="date"
+                          value={exportDateRange.endDate}
+                          onChange={handleDateRangeChange}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {exportType === 'carro' && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicle-select">Selecione o veículo:</Label>
+                      <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Escolha um veículo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getUniqueVehicles().map((vehicle) => (
+                            <SelectItem key={vehicle.value} value={vehicle.value}>
+                              {vehicle.displayName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Seleção de período para filtro por carro */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Período de datas:</Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="startDate-car">Data Inicial</Label>
+                          <Input
+                            id="startDate-car"
+                            name="startDate"
+                            type="date"
+                            value={exportDateRange.startDate}
+                            onChange={handleDateRangeChange}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="endDate-car">Data Final</Label>
+                          <Input
+                            id="endDate-car"
+                            name="endDate"
+                            type="date"
+                            value={exportDateRange.endDate}
+                            onChange={handleDateRangeChange}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {exportType === 'motorista' && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="driver-select">Selecione o motorista:</Label>
+                      <Select value={selectedDriver} onValueChange={setSelectedDriver}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Escolha um motorista" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getUniqueDrivers().map((driver) => (
+                            <SelectItem key={driver} value={driver}>
+                              {driver}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Seleção de período para filtro por motorista */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Período de datas:</Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="startDate-driver">Data Inicial</Label>
+                          <Input
+                            id="startDate-driver"
+                            name="startDate"
+                            type="date"
+                            value={exportDateRange.startDate}
+                            onChange={handleDateRangeChange}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="endDate-driver">Data Final</Label>
+                          <Input
+                            id="endDate-driver"
+                            name="endDate"
+                            type="date"
+                            value={exportDateRange.endDate}
+                            onChange={handleDateRangeChange}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsExportDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={handleExportWithDateRange} disabled={isExporting}>
+                <Button 
+                  onClick={handleExportWithFilters} 
+                  disabled={isExporting || 
+                    (exportType === 'carro' && !selectedVehicle) || 
+                    (exportType === 'motorista' && !selectedDriver)
+                  }
+                >
                   {isExporting ? "Exportando..." : "Exportar"}
                 </Button>
               </DialogFooter>
@@ -593,7 +1108,7 @@ export default function TicketPage() {
                   </TableCell>
                   <TableCell>{ticket.secretaria === "saude" ? "SAÚDE" : ticket.secretaria}</TableCell>
                   <TableCell>{ticket.departamento}</TableCell>
-                  <TableCell>{ticket.placaMotorista}</TableCell>
+                  <TableCell>{formatPlacaModeloMotorista(ticket)}</TableCell>
                   {/* Atualizar a renderização da célula de resumo */}
                   <TableCell>
                     <div className="space-y-1">
@@ -635,6 +1150,10 @@ export default function TicketPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={(e) => handleViewTicket(e, ticket)}>Visualizar</DropdownMenuItem>
                         <DropdownMenuItem onClick={(e) => handleEditTicket(e, ticket)}>Editar</DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => handleExportTicket(e, ticket)}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          Exportar Ticket
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={(e) => handleDeleteTicket(e, ticket)}>Excluir</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -709,7 +1228,7 @@ export default function TicketPage() {
                 </div>
                 <div className="col-span-2">
                   <p className="text-sm font-medium text-muted-foreground">Placa e Motorista</p>
-                  <p>{selectedTicket.placaMotorista}</p>
+                  <p>{formatPlacaModeloMotorista(selectedTicket)}</p>
                 </div>
                 {/* Atualizar a visualização do diálogo */}
                 <div className="col-span-2">
@@ -792,3 +1311,4 @@ export default function TicketPage() {
     </div>
   )
 }
+

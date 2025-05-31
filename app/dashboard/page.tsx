@@ -25,6 +25,7 @@ import {
 } from "chart.js"
 import { dashboardService } from "@/lib/dashboard-service"
 import { storageService } from "@/lib/storage-service"
+import { useStorageListener } from "@/hooks/use-storage-listener"
 
 // Registrar componentes do Chart.js
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
@@ -38,6 +39,9 @@ export default function DashboardPage() {
   const [showValor, setShowValor] = useState(true)
   const { toast } = useToast()
 
+  // Hook para detectar mudanças no localStorage
+  const [storageData, forceStorageUpdate] = useStorageListener("sistema-gestao-data", null)
+
   // Estados para armazenar as estatísticas
   const [stats, setStats] = useState({
     combustivel: dashboardService.getDashboardStats(dataAtual),
@@ -45,13 +49,14 @@ export default function DashboardPage() {
     funcionarios: dashboardService.getEmployeeStats(),
   })
 
-  // Atualizar estatísticas quando a data mudar
+  // Atualizar estatísticas quando a data mudar ou o storage for atualizado
   useEffect(() => {
-    setStats((prevStats) => ({
-      ...prevStats,
+    setStats({
       combustivel: dashboardService.getDashboardStats(dataAtual),
-    }))
-  }, [dataAtual])
+      veiculos: dashboardService.getVehicleStats(),
+      funcionarios: dashboardService.getEmployeeStats(),
+    })
+  }, [dataAtual, storageData])
 
   // Formatar a data atual para exibição
   const mesAnoFormatado = format(dataAtual, "MMMM 'de' yyyy", { locale: ptBR })

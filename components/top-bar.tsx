@@ -62,11 +62,11 @@ export function TopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 shadow-sm">
-      <SidebarTrigger className="text-blue-600 hover:bg-blue-50 hover:text-blue-700" />
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 shadow-sm dark:border-gray-700">
+      <SidebarTrigger className="text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-950 dark:hover:text-blue-300" />
 
       <div className="flex flex-1 items-center justify-end gap-4">
-        <div className="flex items-center text-blue-600 mr-4">
+        <div className="flex items-center text-blue-600 dark:text-blue-400 mr-4">
           <Clock className="h-4 w-4 mr-2" />
           <span className="text-sm font-medium">
             {formattedDate} - {formattedTime}
@@ -76,7 +76,7 @@ export function TopBar() {
         <Button
           variant="outline"
           size="sm"
-          className="mr-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+          className="mr-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950 dark:hover:text-red-300"
           onClick={handleClearData}
         >
           <Trash2 className="h-4 w-4 mr-2" />
@@ -87,20 +87,20 @@ export function TopBar() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+              className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-950 dark:hover:text-blue-300"
             >
               <User className="h-4 w-4" />
               <span>{user?.name || "Usuário"}</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="border-blue-200">
-            <DropdownMenuLabel className="text-blue-700">Minha Conta</DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-blue-100" />
-            <DropdownMenuItem className="text-blue-600 focus:bg-blue-50 focus:text-blue-700">
+          <DropdownMenuContent align="end" className="border-blue-200 dark:border-blue-800 dark:bg-gray-800">
+            <DropdownMenuLabel className="text-blue-700 dark:text-blue-300">Minha Conta</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-blue-100 dark:bg-blue-800" />
+            <DropdownMenuItem className="text-blue-600 focus:bg-blue-50 focus:text-blue-700 dark:text-blue-400 dark:focus:bg-blue-950 dark:focus:text-blue-300">
               <User className="mr-2 h-4 w-4" />
               <span>Perfil</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleLogout} className="text-blue-600 focus:bg-blue-50 focus:text-blue-700">
+            <DropdownMenuItem onClick={handleLogout} className="text-blue-600 focus:bg-blue-50 focus:text-blue-700 dark:text-blue-400 dark:focus:bg-blue-950 dark:focus:text-blue-300">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Sair</span>
             </DropdownMenuItem>

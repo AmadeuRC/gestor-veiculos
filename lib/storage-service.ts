@@ -3,6 +3,8 @@
  * Implementa persistência de dados e operações CRUD para todas as entidades do sistema
  */
 
+import { notifyStorageChange } from "@/hooks/use-storage-listener"
+
 // Tipos para os diferentes tipos de dados
 export interface User {
   id: string
@@ -169,6 +171,8 @@ export class StorageService {
 
     try {
       localStorage.setItem(key, JSON.stringify(value))
+      // Notificar mudanças para atualizar componentes em tempo real
+      notifyStorageChange()
     } catch (error) {
       console.error(`Erro ao salvar ${key} no localStorage:`, error)
     }

@@ -18,11 +18,11 @@ export default function DashboardLayout({
   return (
     <PrivateRoute>
       <SidebarProvider>
-        <div className="flex h-screen bg-blue-50">
+        <div className="flex h-screen bg-blue-50 dark:bg-gray-900">
           <AppSidebar />
           <div className="flex flex-1 flex-col">
             <TopBar />
-            <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
+            <main className="flex-1 overflow-auto p-4 md:p-6 bg-blue-50 dark:bg-gray-900">{children}</main>
           </div>
         </div>
 

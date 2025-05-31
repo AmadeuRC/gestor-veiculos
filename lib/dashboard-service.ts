@@ -113,19 +113,19 @@ export const dashboardService = {
    * @returns Estatísticas de veículos
    */
   getVehicleStats(): VehicleStats {
-    const vehicles = storageService.getVehicles()
+    const vehicles = storageService.getVeiculos()
 
-    // Simulando veículos ativos (em um sistema real, isso seria baseado em um status no veículo)
-    const activeVehicles = vehicles.filter((v) => Number.parseInt(v.id) % 10 !== 0).length
+    // Veículos ativos são aqueles que têm a propriedade ativo como true
+    const activeVehicles = vehicles.filter((v) => v.ativo === true).length
 
-    // Simulando manutenções pendentes
+    // Simulando manutenções pendentes (12% dos veículos)
     const pendingMaintenance = Math.floor(vehicles.length * 0.12)
 
     return {
       totalVehicles: vehicles.length,
       activeVehicles,
       pendingMaintenance,
-      percentActiveVehicles: (activeVehicles / vehicles.length) * 100,
+      percentActiveVehicles: vehicles.length > 0 ? (activeVehicles / vehicles.length) * 100 : 0,
       percentChange: 4.8, // Simulado - em um sistema real, seria calculado com base em dados históricos
     }
   },
